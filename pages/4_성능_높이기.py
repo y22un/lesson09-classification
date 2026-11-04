@@ -445,17 +445,33 @@ def get_reference_values():
 
 def make_prediction_frame(values, reference):
     """선택한 축 이외의 속성은 훈련용 중앙값으로 고정한다."""
+
+    # 입력된 배열의 실제 행 개수를 구한다.
+    first_value = np.asarray(next(iter(values.values())))
+    n_rows = first_value.size if first_value.ndim > 0 else 1
+
+    # 모든 속성을 같은 행 개수로 초기화한다.
     frame = pd.DataFrame(
         {
-            feature: np.full(len(values), reference[feature])
+            feature: np.full(n_rows, reference[feature])
             for feature in selected_features
         }
     )
 
+    # 시각화할 축의 값으로 해당 열을 덮어쓴다.
     for feature, value in values.items():
-        frame[feature] = value
+        value_array = np.asarray(value).reshape(-1)
+
+        if len(value_array) != n_rows:
+            raise ValueError(
+                f"{FEATURE_LABELS.get(feature, feature)}의 "
+                "예측용 데이터 길이가 일치하지 않아."
+            )
+
+        frame[feature] = value_array
 
     return frame
+
 
 
 def add_test_points_2d(fig, x_feature, y_feature):
